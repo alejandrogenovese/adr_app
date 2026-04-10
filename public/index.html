@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADR Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafafa;--card:#fff;--border:#e5e7eb;--text:#1a1a2e;--muted:#6b7280;--accent:#1a1a2e;--accent2:#2563eb;--danger:#dc2626;--success:#16a34a;--warn:#d97706;--radius:10px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:860px;margin:0 auto;padding:24px 16px}
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+header h1{font-size:24px;font-weight:700;letter-spacing:-.5px}
+header p{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.btn{padding:8px 18px;border:none;border-radius:var(--radius);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.85}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:none;border:1px solid var(--border);color:var(--danger)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.search{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit;background:var(--card);outline:none;margin-bottom:20px}
+.search:focus{border-color:var(--accent2)}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;background:var(--card);margin-bottom:10px;transition:box-shadow .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.card-id{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.2px;font-family:'JetBrains Mono',monospace}
+.badge{font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.badge-propuesto{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.badge-aceptado{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.badge-rechazado{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.badge-deprecado{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+.badge-reemplazado{background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe}
+.card h3{font-size:16px;font-weight:600;margin:4px 0 6px}
+.card-meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+.card-template{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:#f0f0f0;color:#888;text-transform:uppercase;letter-spacing:.5px}
+.card-excerpt{font-size:13px;color:#555;line-height:1.5;margin:6px 0 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.footer{text-align:center;font-size:12px;color:#ccc;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* Form */
+.form-wrap{max-width:700px;margin:0 auto}
+.form-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.form-header h2{font-size:20px;font-weight:700}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:var(--card)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent2)}
+.field textarea{resize:vertical;line-height:1.6}
+.field-row{display:flex;gap:12px}
+.field-row .field{flex:1}
+.divider{border-top:1px solid var(--border);margin:20px 0}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.field-help{font-size:11px;color:#aaa;margin-top:2px;font-style:italic}
+.template-selector{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.template-btn{padding:8px 16px;border:2px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;transition:all .15s}
+.template-btn.active{border-color:var(--accent);background:var(--accent);color:#fff}
+.template-btn:hover:not(.active){border-color:var(--accent)}
+
+/* Preview */
+.preview{max-width:700px;margin:0 auto}
+.preview-card{border:1px solid var(--border);border-radius:12px;padding:28px 32px;background:var(--card)}
+.preview-id{font-size:11px;font-weight:700;color:#aaa;letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.preview-title{font-size:22px;font-weight:700;margin:0 0 12px}
+.preview-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.preview-meta span{font-size:12px;color:var(--muted)}
+.section{margin-top:20px;padding-top:16px;border-top:1px solid #f0f0f0}
+.section h3{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.section p{font-size:14px;line-height:1.7;color:#444;white-space:pre-wrap}
+.section:first-of-type{margin-top:12px;border-top:none;padding-top:0}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const API = '/api';
+let adrs = [];
+let currentView = 'list';
+let editId = null;
+let form = {};
+let search = '';
+
+const STATUSES = ['Propuesto','Aceptado','Rechazado','Deprecado','Reemplazado'];
+const TEMPLATES = {
+  madr: { name: 'MADR', desc: 'Markdown ADR (más completa)' },
+  nygard: { name: 'Nygard', desc: 'Minimalista (contexto/decisión/consecuencias)' },
+  tyree: { name: 'Tyree & Akerman', desc: 'Empresarial (supuestos, restricciones, implicaciones)' }
+};
+
+const badgeClass = s => `badge badge-${s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}`;
+
+async function api(path, opts) {
+  const r = await fetch(API + path, { headers: {'Content-Type':'application/json'}, ...opts });
+  return r.json();
+}
+
+async function loadAdrs() {
+  adrs = await api('/adrs');
+  render();
+}
+
+function emptyForm(template = 'madr') {
+  return { id:'', template, title:'', status:'Propuesto', date: new Date().toISOString().split('T')[0],
+    author:'Arquitectura de Datos — Técnica', deciders:'', context:'', decision_drivers:'',
+    considered_options:'', decision_outcome:'', pros_cons:'', consequences_positive:'',
+    consequences_negative:'', links:'', issue:'', assumptions:'', constraints_field:'',
+    positions:'', implications:'', related_decisions:'', related_requirements:'', notes:'' };
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (currentView === 'list') renderList(app);
+  else if (currentView === 'edit') renderEdit(app);
+  else if (currentView === 'preview') renderPreview(app);
+}
+
+function renderList(el) {
+  const filtered = adrs.filter(a => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return a.id.toLowerCase().includes(s) || a.title.toLowerCase().includes(s) || a.status.toLowerCase().includes(s);
+  });
+
+  el.innerHTML = `
+    <header>
+      <div><h1>Architecture Decision Records</h1><p>Arquitectura de Datos</p></div>
+      <button class="btn btn-primary" onclick="newAdr()">+ Nuevo ADR</button>
+    </header>
+    ${adrs.length ? `<input class="search" placeholder="Buscar por ID, título o estado..." value="${search}" oninput="search=this.value;render()">` : ''}
+    ${filtered.length === 0 ? `
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <p style="font-size:16px;font-weight:600">${adrs.length ? 'Sin resultados' : 'No hay ADRs creados'}</p>
+        ${!adrs.length ? '<p style="font-size:13px;margin-top:8px">Creá tu primer ADR para documentar decisiones arquitectónicas</p>' : ''}
+      </div>
+    ` : filtered.map(a => `
+      <div class="card">
+        <div class="card-top">
+          <span class="card-id">${a.id}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="card-template">${TEMPLATES[a.template]?.name || a.template}</span>
+            <span class="${badgeClass(a.status)}">${a.status}</span>
+          </div>
+        </div>
+        <h3>${a.title || 'Sin título'}</h3>
+        <div class="card-meta">${a.date} · ${a.author}</div>
+        ${a.context ? `<div class="card-excerpt">${a.context}</div>` : ''}
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" onclick="viewAdr('${a.id}')">Ver</button>
+          <button class="btn btn-outline btn-sm" onclick="editAdr('${a.id}')">Editar</button>
+          <button class="btn btn-outline btn-sm" onclick="exportAdr('${a.id}')">Export .md</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdr('${a.id}')">Eliminar</button>
+        </div>
+      </div>
+    `).join('')}
+    <div class="footer">${adrs.length} ADR${adrs.length!==1?'s':''} · Basado en <a href="https://github.com/joelparkerhenderson/architecture-decision-record" target="_blank" style="color:#aaa">joelparkerhenderson/adr</a></div>
+  `;
+}
+
+function templateFields(t) {
+  const common = [
+    { key:'context', label:'Contexto y Problema', placeholder:'¿Qué problema estamos resolviendo? ¿Qué fuerzas están en juego?', rows:4 },
+  ];
+  if (t === 'nygard') return [
+    ...common,
+    { key:'decision_outcome', label:'Decisión', placeholder:'¿Qué decidimos hacer?', rows:4 },
+    { key:'consequences_positive', label:'Consecuencias', placeholder:'¿Qué resulta de esta decisión? Positivas y negativas.', rows:4 },
+  ];
+  if (t === 'tyree') return [
+    { key:'issue', label:'Issue', placeholder:'Describí el problema de diseño arquitectónico que estás abordando.', rows:2 },
+    ...common,
+    { key:'assumptions', label:'Supuestos', placeholder:'Supuestos del entorno: costos, cronograma, tecnología aceptada...', rows:3 },
+    { key:'constraints_field', label:'Restricciones', placeholder:'Restricciones adicionales que la alternativa elegida podría imponer.', rows:3 },
+    { key:'positions', label:'Posiciones Evaluadas', placeholder:'Listá las opciones viables que consideraste.', rows:4 },
+    { key:'decision_outcome', label:'Decisión', placeholder:'Indicá claramente la dirección elegida.', rows:4 },
+    { key:'implications', label:'Implicaciones', placeholder:'¿Qué implica esta decisión? ¿Nuevos requisitos, capacitación, costos?', rows:3 },
+    { key:'related_decisions', label:'Decisiones Relacionadas', placeholder:'ADRs relacionados, ej. ADR-0002, ADR-0005...', rows:2 },
+    { key:'related_requirements', label:'Requisitos Relacionados', placeholder:'Requisitos de negocio o técnicos vinculados.', rows:2 },
+    { key:'notes', label:'Notas', placeholder:'Información adicional, evidencia, links...', rows:3 },
+  ];
+  // MADR
+  return [
+    { key:'issue', label:'Technical Story', placeholder:'Descripción técnica o link al ticket/issue (opcional)', rows:1 },
+    ...common,
+    { key:'decision_drivers', label:'Drivers de Decisión', placeholder:'* Performance\n* Mantenibilidad\n* Costo operativo\n* Acoplamiento', rows:3 },
+    { key:'considered_options', label:'Opciones Consideradas', placeholder:'* Opción A — descripción\n* Opción B — descripción\n* Opción C — descripción', rows:4 },
+    { key:'decision_outcome', label:'Resultado de la Decisión', placeholder:'Opción elegida: "X", porque cumple los drivers de...', rows:4 },
+    { key:'pros_cons', label:'Pros y Contras de las Opciones', placeholder:'### Opción A\n* Bueno, porque...\n* Malo, porque...\n\n### Opción B\n* Bueno, porque...', rows:5 },
+    { key:'consequences_positive', label:'Consecuencias Positivas', placeholder:'* Mejor observabilidad\n* Menor acoplamiento', rows:3 },
+    { key:'consequences_negative', label:'Consecuencias Negativas', placeholder:'* Mayor complejidad inicial\n* Requiere capacitación', rows:3 },
+    { key:'links', label:'Links', placeholder:'* [Link a PoC](url)\n* [ADR relacionado](ADR-0002)', rows:2 },
+  ];
+}
+
+function renderEdit(el) {
+  const fields = templateFields(form.template);
+  el.innerHTML = `
+    <div class="form-wrap">
+      <div class="form-header">
+        <button class="btn btn-outline" onclick="goList()">← Cancelar</button>
+        <h2>${editId ? 'Editar' : 'Nuevo'} ADR</h2>
+      </div>
+      <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block">Plantilla</label>
+      <div class="template-selector">
+        ${Object.entries(TEMPLATES).map(([k,v]) => `
+          <button class="template-btn ${form.template===k?'active':''}" onclick="switchTemplate('${k}')"
+            title="${v.desc}">${v.name}</button>
+        `).join('')}
+      </div>
+      <div class="field-row">
+        <div class="field"><label>ID</label><input value="${form.id}" readonly style="background:#f5f5f5;color:#999"></div>
+        <div class="field"><label>Estado</label><select onchange="form.status=this.value">${STATUSES.map(s=>`<option ${form.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Fecha</label><input type="date" value="${form.date}" onchange="form.date=this.value"></div>
+      </div>
+      <div class="field"><label>Título</label><input value="${esc(form.title)}" oninput="form.title=this.value" placeholder="Patrón de integración Control-M con Airflow"></div>
+      <div class="field-row">
+        <div class="field"><label>Autor</label><input value="${esc(form.author)}" oninput="form.author=this.value"></div>
+        <div class="field"><label>${form.template==='tyree'?'Grupo':'Decisores'}</label><input value="${esc(form.deciders)}" oninput="form.deciders=this.value" placeholder="${form.template==='tyree'?'ej. Integración, Data, Infraestructura':'Líder Arq. Técnica, Líder Plataforma'}"></div>
+      </div>
+      <div class="divider"></div>
+      ${fields.map(f => `
+        <div class="field">
+          <label>${f.label}</label>
+          <textarea rows="${f.rows}" oninput="form.${f.key}=this.value" placeholder="${f.placeholder}">${esc(form[f.key]||'')}</textarea>
+        </div>
+      `).join('')}
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="goList()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveAdr()" ${!form.title?'disabled':''}>Guardar ADR</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderPreview(el) {
+  const fields = templateFields(form.template);
+  const sections = fields.filter(f => form[f.key]).map(f => `
+    <div class="section"><h3>${f.label}</h3><p>${esc(form[f.key])}</p></div>
+  `).join('');
+
+  el.innerHTML = `
+    <div class="preview">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+        <button class="btn btn-outline" onclick="goList()">← Volver</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="editAdr('${form.id}')">Editar</button>
+          <button class="btn btn-outline btn-sm" onclick="exportAdr('${form.id}')">↓ Export .md</button>
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="preview-id">${form.id}</div>
+        <h1 class="preview-title">${esc(form.title) || 'Sin título'}</h1>
+        <div class="preview-meta">
+          <span class="${badgeClass(form.status)}">${form.status}</span>
+          <span class="card-template">${TEMPLATES[form.template]?.name}</span>
+          <span>${form.date}</span>
+          <span>${esc(form.author)}</span>
+        </div>
+        ${form.deciders ? `<div style="font-size:13px;color:var(--muted);margin-bottom:12px"><strong>${form.template==='tyree'?'Grupo':'Decisores'}:</strong> ${esc(form.deciders)}</div>` : ''}
+        ${sections}
+      </div>
+    </div>
+  `;
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function newAdr() {
+  const { id } = await api('/next-id');
+  form = emptyForm();
+  form.id = id;
+  editId = null;
+  currentView = 'edit';
+  render();
+}
+
+function editAdr(id) {
+  const a = adrs.find(x => x.id === id);
+  if (!a) return;
+  form = { ...a };
+  editId = id;
+  currentView = 'edit';
+  render();
+}
+
+function viewAdr(id) {
+  const a = adrs.find(x => x.id === id);
+  if (!a) return;
+  form = { ...a };
+  currentView = 'preview';
+  render();
+}
+
+async function saveAdr() {
+  if (!form.title) return;
+  if (editId) {
+    await api(`/adrs/${editId}`, { method: 'PUT', body: JSON.stringify(form) });
+  } else {
+    await api('/adrs', { method: 'POST', body: JSON.stringify(form) });
+  }
+  currentView = 'list';
+  await loadAdrs();
+}
+
+async function deleteAdr(id) {
+  if (!confirm(`¿Eliminar ${id}?`)) return;
+  await api(`/adrs/${id}`, { method: 'DELETE' });
+  await loadAdrs();
+}
+
+function exportAdr(id) {
+  window.open(`${API}/adrs/${id}/export`);
+}
+
+function switchTemplate(t) {
+  const oldForm = { ...form };
+  form = emptyForm(t);
+  // Preserve common fields
+  ['id','title','status','date','author','deciders','context','decision_outcome',
+   'consequences_positive','consequences_negative','issue','notes','links',
+   'assumptions','constraints_field','positions','implications','related_decisions',
+   'related_requirements','decision_drivers','considered_options','pros_cons'].forEach(k => {
+    if (oldForm[k]) form[k] = oldForm[k];
+  });
+  render();
+}
+
+function goList() { currentView = 'list'; search = ''; render(); }
+
+loadAdrs();
+</script>
+</body>
+</html>
